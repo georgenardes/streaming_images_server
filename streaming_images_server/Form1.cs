@@ -15,6 +15,8 @@ namespace streaming_images_server
 {
     public partial class Form1 : Form
     {
+        //v1
+
         private byte[] bImagem;
 
         public Form1()
