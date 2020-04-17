@@ -40,6 +40,30 @@ namespace streaming_images_server
             return result;
         }
 
+        private void func()
+        {
+            try
+            {
+                WebRequest request = WebRequest.Create("http://192.168.25.76/axis-cgi/jpg/image.cgi");
+                WebResponse response = request.GetResponse();
+                Stream responseStream = response.GetResponseStream();
+
+
+                Bitmap bitmap2 = new Bitmap(responseStream);
+                pictureBox1.Image = bitmap2;
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine(we.Response);
+                Console.WriteLine(we.Status);
+                Console.WriteLine(we.Message);
+
+
+                MessageBox.Show("There was an error opening the image file."
+                   + "Check the URL");
+            }
+        }
+
 
         private void btnCarregar_Click(object sender, EventArgs e)
         {
