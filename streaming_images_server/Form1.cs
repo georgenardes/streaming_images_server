@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -41,25 +42,36 @@ namespace streaming_images_server
             return result;
         }
 
+        private static void salvaArquivo(byte [] buf, int id, int qtd_bytes)
+        {
+            Console.WriteLine("salvando arquivo");
+            FileStream fs = new FileStream(@"C:\Users\User\Desktop\images\_image" + id + ".jfif", FileMode.Append, FileAccess.Write);
+            fs.Write(buf, 0, qtd_bytes);
+            fs.Write(ASCIIEncoding.ASCII.GetBytes("\n\n\n\n\n"), 0, 5);
+            fs.Close();
+        }
+
+        /* verifica se o cabeçalho ja contem o tamanho do frame */
+
+        /* extrai o tamanho do frame e cria um buffer desse tamanho para criar a imagem */
+
+        /* le até frame, incrementando por fragmento (tamanho do fragmento é de 1460) */
+
+        /* tratar bytes que sobrarem */
+
+        /* ler o tamanho do proximo frame */
+
         private void func()
         {
             try
             {
-                //WebRequest request = WebRequest.Create("http://192.168.25.76/axis-cgi/jpg/image.cgi");
-                //WebRequest request = WebRequest.Create("http://192.168.25.76/axis-cgi/mjpg/video.cgi");
-
-                /*WebResponse response = request.GetResponse();                
-                Console.WriteLine("2");
-                Stream responseStream = response.GetResponseStream();                
-                Console.WriteLine("3");*/
-
-                Socket clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                clientSocket.Connect(new IPEndPoint(IPAddress.Parse("192.168.25.76"), 80));
-                MessageBox.Show("Client is connected.\n");
+                Socket client_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                client_socket.Connect(new IPEndPoint(IPAddress.Parse("192.168.25.76"), 80));
+                Console.WriteLine("Client is connected.\n");
 
                 /* envia requisição de video para a câmera */
                 string GETRequest = "GET /axis-cgi/mjpg/video.cgi HTTP/1.1\r\nHost: 192.168.25.76\r\nConnection: Keep-Alive\r\n\r\n";
-                clientSocket.Send(Encoding.ASCII.GetBytes(GETRequest));
+                client_socket.Send(Encoding.ASCII.GetBytes(GETRequest));
 
                 /* buffer cabeçalho */
                 byte[] cab_buff = new byte[1];
@@ -68,130 +80,99 @@ namespace streaming_images_server
                 string cab_text = "";
 
                 /* tamanho do conteudo(payload)*/
-                int contentLength = 0;
+                int content_length = 0;
 
                 /* buffer conteudo */
                 byte[] cont_buff = new byte[0];
 
-                using (Stream netStream = new NetworkStream(clientSocket, true), bufStream = new BufferedStream(netStream, 100000))
-                {
-                    int num_images = 0;
-                    FileStream fs = new FileStream(@"C:\Users\User\Desktop\images\image_" + num_images + ".jfif", FileMode.Append, FileAccess.Write);
-                    while(num_images < 50)
+                /* quantidade de bytes lidos */
+                int qtd_b_lido = 0;
+
+                using (Stream netStream = new NetworkStream(client_socket, true), bufStream = new BufferedStream(netStream, 100000), memoryStream = new MemoryStream())
+                {                                               
+                    if (bufStream.CanRead)
                     {
-                            
-                        if (bufStream.CanRead)
+                        int num_laco = 0;
+
+                        /* le o cabeçalho do pacote recebido byte por byte e monta a string de cabeçalho */
+                        while (true)
                         {
-                            bool primeiro = true;
-
-                            /* le o cabeçalho do pacote recebido byte por byte e monta a string de cabeçalho */
-                            while (true)
-                            {
                                                                 
-                                clientSocket.Receive(cab_buff, 0, 1, SocketFlags.None);
-                                cab_text += ASCIIEncoding.ASCII.GetString(cab_buff);
+                            client_socket.Receive(cab_buff, 0, 1, SocketFlags.None);
+                            cab_text += ASCIIEncoding.ASCII.GetString(cab_buff);
 
-                                /* verifica se o cabeçalho ja contem o tamanho do frame */
-
-                                /* extrai o tamanho do frame e cria um buffer desse tamanho para criar a imagem */
-
-                                /* le até frame, incrementando por fragmento (tamanho do fragmento é de 1460) */
-                                
-                                /* tratar bytes que sobrarem */
-
-                                /* ler o tamanho do proximo frame */
-
-
-                                /*                               if (!primeiro && cab_text.Contains("\r\n\r\n"))
-                                                               {
-                                                                   // header is received, parsing content length
-                                                                   // I use regular expressions, but any other method you can think of is ok
-                                                                   Regex reg = new Regex("\\\r\nContent-Length: (.*?)\\\r\n");
-
-                                                                   Console.WriteLine(cab_text);
-                                                                   Match m = reg.Match(cab_text);
-
-                                                                   if (m.Success)
-                                                                   {
-                                                                       contentLength = int.Parse(m.Groups[1].ToString());
-
-                                                                       Console.WriteLine("content length " + contentLength);
-
-                                                                       // read the body
-                                                                       cont_buff = new byte[contentLength];
-
-                                                                       //bufStream.Read(cont_buff, 0, contentLength);
-
-                                                                       int numBytesToRead = contentLength;
-                                                                       int bytesReceived = 0;
-
-                                                                       while (numBytesToRead > 0)
-                                                                       {
-                                                                           // Read may return anything from 0 to numBytesToRead.
-                                                                           int n = bufStream.Read(cont_buff, 0, contentLength);
-
-                                                                           // The end of the file is reached.
-                                                                           if (n == 0)
-                                                                               break;
-                                                                           bytesReceived += n;
-                                                                           numBytesToRead -= n;
-                                                                       }
-
-                                                                       Console.WriteLine(numBytesToRead);
-                                                                       Console.WriteLine(bytesReceived);
-
-                                                                       fs.Write(cont_buff, 0, contentLength);
-                                                                       fs.Close();
-                                                                       break;
-
-                                                                   }
-                                                                   else
-                                                                   {
-                                                                       Console.WriteLine("content length não encontrado ");
-                                                                       cab_text = "";
-                                                                       primeiro = true;
-                                                                   }                                    
-
-
-                                                               }
-                                                               */
-                                // read the body
-                                cont_buff = new byte[2048];
-
-                                //bufStream.Read(cont_buff, 0, contentLength);
-
-                                int numBytesToRead = 1460;
-                                int bytesReceived = 0;
-
-                                while (numBytesToRead > 0)
+                            /* verifica se o cabeçalho ja contem o tamanho do frame */                            
+                            /* final de cabeçalho */
+                            if (cab_text.Contains("\r\n\r\n"))
+                            {
+                                /* verifica se o cabeçalho contem o tamanho, se não contem, limpa e continua leitura */
+                                if (!cab_text.Contains("Content-Length:"))
                                 {
-                                    // Read may return anything from 0 to numBytesToRead.
-                                    int n = bufStream.Read(cont_buff, 0, 1460);
+                                    //Console.WriteLine("laco " + num_laco + " -- " + cab_text);
+                                    cab_text = "";
+                                    continue;
+                                } else
+                                {
+                                    /* extrai o tamanho do frame e cria um buffer desse tamanho para criar a imagem */
 
-                                    /* insere 10 quebra de linha para facilitar identificação de blocos de conteudo */
-                                    for (int i = 1460; i < 1470; i++)
-                                        cont_buff[i] = ASCIIEncoding.ASCII.GetBytes("\n")[0];
+                                    //Console.WriteLine("2 " + cab_text);
+
+                                    Regex reg = new Regex("\\\r\nContent-Length: (.*?)\\\r\n");
+                                    Match m = reg.Match(cab_text);
 
 
-                                    // The end of the file is reached.
-                                    if (n == 0)
-                                        break;
+                                    if (m.Success)
+                                    {
+                                        /* tamanho total em bytes da imagem que será recebida */
+                                        content_length = int.Parse(m.Groups[1].ToString());
+                                        //Console.WriteLine("content length " + content_length);
 
-                                    bytesReceived += n;
-                                    numBytesToRead -= n;
+                                        cont_buff = new byte[content_length];
+
+                                        qtd_b_lido = 0;
+
+                                        while (qtd_b_lido < content_length - 1)
+                                        {
+                                            if (qtd_b_lido + 1460 < content_length)
+                                            {
+                                                bufStream.Read(cont_buff, qtd_b_lido, 1460);
+                                                qtd_b_lido += 1460;
+                                            }
+                                            else
+                                            {
+                                                bufStream.Read(cont_buff, qtd_b_lido, content_length - qtd_b_lido);
+                                                qtd_b_lido = content_length;
+                                            }
+                                        }
+
+                                        memoryStream.Write(cont_buff, 0, cont_buff.Length);
+                                        pictureBox1.Image = Image.FromStream(memoryStream);
+
+                                        Console.WriteLine("imagem criada " + num_laco);
+                                        Thread.Sleep(300);
+
+                                        memoryStream.Flush();
+
+                                        salvaArquivo(cont_buff, num_laco, cont_buff.Length);
+
+                                        /* teoricamente aqui ja teria lido todo o  fragmento do primeiro cabeçalho*/
+                                        /* fazer a leitura do proximo cabeçalho e repetir */
+                                        //break;
+                                        cab_text = "";
+                                        num_laco++;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("content length não encontrado ");
+                                        cab_text = "";
+                                        continue;
+                                    }
+
                                 }
-
-                                Console.WriteLine(numBytesToRead);
-                                Console.WriteLine(bytesReceived);
-
-                                fs.Write(cont_buff, 0, 2048);
-                                //fs.Close();
-
                             }
-                        }                        
-                        num_images++;
-                    }
-                    fs.Close();
+                        }
+                    }                        
+                                            
                     MessageBox.Show("\nShutting down the connection.");
                     bufStream.Close();
                 }                                               

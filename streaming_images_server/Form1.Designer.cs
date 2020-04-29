@@ -37,7 +37,7 @@
             // 
             // btnCarregar
             // 
-            this.btnCarregar.Location = new System.Drawing.Point(713, 12);
+            this.btnCarregar.Location = new System.Drawing.Point(1374, 12);
             this.btnCarregar.Name = "btnCarregar";
             this.btnCarregar.Size = new System.Drawing.Size(75, 23);
             this.btnCarregar.TabIndex = 0;
@@ -47,7 +47,7 @@
             // 
             // btnEnviar
             // 
-            this.btnEnviar.Location = new System.Drawing.Point(713, 41);
+            this.btnEnviar.Location = new System.Drawing.Point(1374, 41);
             this.btnEnviar.Name = "btnEnviar";
             this.btnEnviar.Size = new System.Drawing.Size(75, 23);
             this.btnEnviar.TabIndex = 1;
@@ -59,24 +59,24 @@
             // 
             this.pictureBox1.Location = new System.Drawing.Point(12, 12);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(695, 426);
+            this.pictureBox1.Size = new System.Drawing.Size(1356, 728);
             this.pictureBox1.TabIndex = 2;
             this.pictureBox1.TabStop = false;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(713, 70);
+            this.button1.Location = new System.Drawing.Point(1374, 70);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 3;
             this.button1.Text = "Enviar";
-            this.button1.UseVisualStyleBackColor = true;            
+            this.button1.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(1461, 752);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.pictureBox1);
             this.Controls.Add(this.btnEnviar);
